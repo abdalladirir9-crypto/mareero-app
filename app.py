@@ -72,10 +72,16 @@ def generate_pdf(df):
     date_str = datetime.now().strftime('%d %B %Y')
     c.drawCentredString(width/2, height-80, f"Taariikhda: {date_str}")
 
-    # --- SUMMARY SECTION ---
+    # --- SECTION 1: SUMMARY ---
     c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(40, height-150, "1. KOOBITAAN (SUMMARY):")
+    c.drawString(40, height-140, "1. KOOBITAAN (SUMMARY):")
+    
+    # >> SOMALI DESCRIPTION <<
+    c.setFont("Helvetica", 10)
+    c.setFillColor(colors.darkgrey)
+    c.drawString(40, height-160, "Halkan waxaa ku qoran warbixinta guud ee maanta, oo ay ku jiraan tirada shaqooyinka,")
+    c.drawString(40, height-175, "alaabta maqan, iyo dalabyada cusub ee la diiwaangeliyay.")
     
     # Calc Metrics
     total = len(df)
@@ -84,17 +90,24 @@ def generate_pdf(df):
     
     # Draw Summary Box
     c.setStrokeColor(colors.lightgrey)
-    c.rect(40, height-230, 515, 60, fill=0)
+    c.rect(40, height-250, 515, 60, fill=0)
     
+    c.setFillColor(text_color)
     c.setFont("Helvetica", 12)
-    c.drawString(60, height-190, f"Wadarta Shaqooyinka: {total}")
-    c.drawString(240, height-190, f"Alaabta Maqan: {missing}")
-    c.drawString(420, height-190, f"Dalabyada Cusub: {new_req}")
+    c.drawString(60, height-210, f"Wadarta Shaqooyinka: {total}")
+    c.drawString(240, height-210, f"Alaabta Maqan: {missing}")
+    c.drawString(420, height-210, f"Dalabyada Cusub: {new_req}")
 
-    # --- CHARTS SECTION (RESTORED) ---
-    y_chart = height-280
+    # --- SECTION 2: CHARTS ---
+    y_chart = height-300
     c.setFont("Helvetica-Bold", 16)
     c.drawString(40, y_chart, "2. SHAXDA XOGTA (CHARTS):")
+    
+    # >> SOMALI DESCRIPTION <<
+    c.setFont("Helvetica", 10)
+    c.setFillColor(colors.darkgrey)
+    c.drawString(40, y_chart-20, "Shaxdan hoose waxay kala dhigdhigeysaa xogta iyadoo loo eegayo Qeybaha (Categories)")
+    c.drawString(40, y_chart-35, "iyo Laamaha (Branches) si loo fahmo halka shaqadu u badan tahay.")
     
     if not df.empty and 'Category' in df.columns and 'Branch' in df.columns:
         try:
@@ -109,7 +122,7 @@ def generate_pdf(df):
                 plt.savefig(img1, format='png', bbox_inches='tight')
                 plt.close(fig1)
                 img1.seek(0)
-                c.drawImage(ImageReader(img1), 40, y_chart-220, width=240, height=180)
+                c.drawImage(ImageReader(img1), 40, y_chart-260, width=240, height=180)
             
             # Chart 2: Bar
             fig2, ax2 = plt.subplots(figsize=(4, 3))
@@ -123,28 +136,34 @@ def generate_pdf(df):
                 plt.savefig(img2, format='png', bbox_inches='tight')
                 plt.close(fig2)
                 img2.seek(0)
-                c.drawImage(ImageReader(img2), 300, y_chart-220, width=240, height=180)
+                c.drawImage(ImageReader(img2), 300, y_chart-260, width=240, height=180)
         except Exception:
-            c.drawString(40, y_chart-50, "Error generating charts.")
+            c.drawString(40, y_chart-60, "Error generating charts.")
     else:
-        c.drawString(40, y_chart-50, "Xog kuma filna shaxda.")
+        c.drawString(40, y_chart-60, "Xog kuma filna shaxda.")
 
-    # --- CRITICAL LIST SECTION ---
-    y_list = y_chart - 260
+    # --- SECTION 3: CRITICAL LIST ---
+    y_list = y_chart - 290
+    c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 16)
     c.drawString(40, y_list, "3. ALAABTA MUHIIMKA AH (CRITICAL ITEMS):")
+
+    # >> SOMALI DESCRIPTION <<
+    c.setFont("Helvetica", 10)
+    c.setFillColor(colors.darkgrey)
+    c.drawString(40, y_list-20, "Liiskan wuxuu muujinayaa alaabta 'Maqan' ama 'Dalabka Sare' ah ee u baahan fiiro gaar ah.")
     
     # Table Header
     c.setFillColor(colors.lightgrey)
-    c.rect(40, y_list-30, 515, 20, fill=1, stroke=0)
+    c.rect(40, y_list-50, 515, 20, fill=1, stroke=0)
     c.setFillColor(colors.black)
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(50, y_list-25, "CATEGORY")
-    c.drawString(150, y_list-25, "ITEM NAME")
-    c.drawString(300, y_list-25, "BRANCH")
-    c.drawString(420, y_list-25, "NOTE")
+    c.drawString(50, y_list-45, "CATEGORY")
+    c.drawString(150, y_list-45, "ITEM NAME")
+    c.drawString(300, y_list-45, "BRANCH")
+    c.drawString(420, y_list-45, "NOTE")
     
-    y_row = y_list - 50
+    y_row = y_list - 70
     c.setFont("Helvetica", 10)
     
     if not df.empty and 'Category' in df.columns:
