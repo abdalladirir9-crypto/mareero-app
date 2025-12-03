@@ -6,176 +6,236 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
 import io
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Mareero Intelligence", page_icon="🏢", layout="wide")
+st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
 # --- 1. SETUP DATABASE ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
 except:
-    st.error("⚠️ Database Error. Check internet or secrets.")
+    st.error("⚠️ Error: Fadlan hubi internetkaaga ama Database-ka.")
     st.stop()
 
-# --- 2. REPORT GENERATOR ENGINE ---
+# --- 2. PROFESSIONAL REPORT ENGINES ---
+
+def generate_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Warbixin')
+    output.seek(0)
+    return output
+
 def generate_pdf(df):
-    """
-    Creates a professional PDF report in memory.
-    """
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     
-    # --- A. GENERATE CHARTS ---
-    # Chart 1: Issues by Category
-    fig1, ax1 = plt.subplots(figsize=(5, 4))
-    if not df.empty:
-        df['Category'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax1, colors=['#ff9999','#66b3ff','#99ff99','#ffcc99'])
-    ax1.set_title("Report Distribution")
-    ax1.set_ylabel('')
+    # --- COLORS & STYLES ---
+    primary_color = colors.HexColor("#8B0000") # Dark Red
+    text_color = colors.HexColor("#2C3E50")    # Dark Blue/Grey
     
-    img_data1 = io.BytesIO()
-    plt.savefig(img_data1, format='png')
-    img_data1.seek(0)
-    
-    # Chart 2: Activity by Branch
-    fig2, ax2 = plt.subplots(figsize=(5, 4))
-    if not df.empty:
-        df['Branch'].value_counts().plot(kind='bar', color='#D32F2F', ax=ax2)
-    ax2.set_title("Activity by Branch")
-    
-    img_data2 = io.BytesIO()
-    plt.savefig(img_data2, format='png', bbox_inches='tight')
-    img_data2.seek(0)
-
-    # --- B. DRAW PDF ---
-    # Header
-    c.setFillColorRGB(0.8, 0.1, 0.1) # Red
+    # --- HEADER ---
+    c.setFillColor(primary_color)
     c.rect(0, height-100, width, 100, fill=1, stroke=0)
-    c.setFillColorRGB(1, 1, 1) # White
-    c.setFont("Helvetica-Bold", 24)
-    c.drawCentredString(width/2, height-60, "MAREERO INTELLIGENCE REPORT")
+    
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 26)
+    c.drawCentredString(width/2, height-60, "MAREERO OPERATION REPORT")
+    
     c.setFont("Helvetica", 12)
     date_str = datetime.now().strftime('%d %B %Y')
-    c.drawCentredString(width/2, height-80, f"Generated: {date_str}")
+    c.drawCentredString(width/2, height-80, f"Taariikhda: {date_str}")
 
-    # Executive Summary
-    c.setFillColorRGB(0, 0, 0)
+    # --- SUMMARY SECTION ---
+    c.setFillColor(text_color)
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height-150, "EXECUTIVE SUMMARY:")
+    c.drawString(40, height-150, "1. KOOBITAAN (SUMMARY):")
+    
+    # Calc Metrics
+    total = len(df)
+    missing = len(df[df['Category'] == 'Maqan']) if not df.empty else 0
+    new_req = len(df[df['Category'] == 'Dalab Cusub']) if not df.empty else 0
+    
+    # Draw Summary Box
+    c.setStrokeColor(colors.lightgrey)
+    c.rect(40, height-230, 515, 60, fill=0)
     
     c.setFont("Helvetica", 12)
-    total_logs = len(df)
-    missing_cnt = len(df[df['Category'].str.contains('Missing', na=False)]) if not df.empty else 0
-    new_cnt = len(df[df['Category'].str.contains('New', na=False)]) if not df.empty else 0
-    
-    c.drawString(50, height-180, f"• Total Activity Logs: {total_logs}")
-    c.drawString(50, height-200, f"• Critical Missing Items: {missing_cnt}")
-    c.drawString(50, height-220, f"• New Business Opportunities: {new_cnt}")
+    c.drawString(60, height-190, f"Wadarta Shaqooyinka: {total}")
+    c.drawString(240, height-190, f"Alaabta Maqan: {missing}")
+    c.drawString(420, height-190, f"Dalabyada Cusub: {new_req}")
 
-    # Draw Charts
-    try:
-        c.drawImage(ImageReader(img_data1), 50, height-500, width=250, height=200)
-        c.drawImage(ImageReader(img_data2), 300, height-500, width=250, height=200)
-    except:
-        c.drawString(50, height-400, "Not enough data for charts.")
-
-    # Critical List
+    # --- CHARTS SECTION ---
+    y_chart = height-280
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height-550, "⚠️ TOP 10 CRITICAL ALERTS:")
-    
-    c.setFont("Helvetica", 10)
-    y = height - 580
+    c.drawString(40, y_chart, "2. SHAXDA XOGTA (CHARTS):")
     
     if not df.empty:
-        critical_df = df[df['Category'].isin(['Missing', 'High Demand'])].head(10)
-        for index, row in critical_df.iterrows():
-            text = f"• [{row['Category']}] {row['Item']} ({row['Branch']})"
-            c.drawString(50, y, text)
-            y -= 20
+        # Chart 1: Pie
+        fig1, ax1 = plt.subplots(figsize=(4, 3))
+        df['Category'].value_counts().plot(kind='pie', autopct='%1.0f%%', ax=ax1, colors=['#ff9999','#66b3ff','#99ff99','#ffcc99'])
+        ax1.set_ylabel('')
+        ax1.set_title("Qeybaha", fontsize=10)
+        
+        img1 = io.BytesIO()
+        plt.savefig(img1, format='png', bbox_inches='tight')
+        img1.seek(0)
+        c.drawImage(ImageReader(img1), 40, y_chart-220, width=240, height=180)
+        
+        # Chart 2: Bar
+        fig2, ax2 = plt.subplots(figsize=(4, 3))
+        df['Branch'].value_counts().plot(kind='bar', color='#8B0000', ax=ax2)
+        ax2.set_title("Laamaha", fontsize=10)
+        
+        img2 = io.BytesIO()
+        plt.savefig(img2, format='png', bbox_inches='tight')
+        img2.seek(0)
+        c.drawImage(ImageReader(img2), 300, y_chart-220, width=240, height=180)
+    else:
+        c.drawString(40, y_chart-50, "Xog kuma filna shaxda.")
+
+    # --- CRITICAL LIST SECTION ---
+    y_list = y_chart - 260
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(40, y_list, "3. ALAABTA MUHIIMKA AH (CRITICAL ITEMS):")
     
+    # Table Header
+    c.setFillColor(colors.lightgrey)
+    c.rect(40, y_list-30, 515, 20, fill=1, stroke=0)
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y_list-25, "CATEGORY")
+    c.drawString(150, y_list-25, "ITEM NAME")
+    c.drawString(300, y_list-25, "BRANCH")
+    c.drawString(420, y_list-25, "NOTE")
+    
+    y_row = y_list - 50
+    c.setFont("Helvetica", 10)
+    
+    if not df.empty:
+        # Filter for Maqan or Dalab Sare
+        critical_df = df[df['Category'].isin(['Maqan', 'Dalab Sare'])].head(15)
+        for _, row in critical_df.iterrows():
+            c.drawString(50, y_row, str(row['Category']))
+            c.drawString(150, y_row, str(row['Item'])[:25]) # Cut text if too long
+            c.drawString(300, y_row, str(row['Branch']))
+            c.drawString(420, y_row, str(row['Note'])[:20])
+            c.line(40, y_row-5, 555, y_row-5) # Underline
+            y_row -= 20
+            
+            if y_row < 50: # New page check
+                c.showPage()
+                y_row = height - 50
+
     c.save()
     buffer.seek(0)
     return buffer
 
 # --- 3. THE APP UI ---
-st.title("🏢 Mareero Operations")
+st.title("🏢 Mareero System")
 
 # TABS
-tab_staff, tab_manager = st.tabs(["📝 Staff Entry", "🔐 Manager HQ"])
+tab_staff, tab_manager = st.tabs(["📝 Qeybta Shaqaalaha (Staff)", "🔐 Maamulka (Manager)"])
 
-# --- STAFF TAB ---
+# --- STAFF TAB (SOMALI) ---
 with tab_staff:
-    st.info("Staff Area: Please report items below.")
+    st.info("Fadlan halkan ku diiwaangeli warbixintaada maalinlaha ah.")
+    
     with st.form("log_form"):
         c1, c2 = st.columns(2)
         with c1:
-            branch = st.selectbox("📍 Branch", ["Branch 1", "Branch 2", "Branch 3", "Branch 4", "Branch 5"])
-            employee = st.text_input("👤 Your Name")
+            branch = st.selectbox("📍 Dooro Laanta (Branch)", ["Laanta 1", "Laanta 2", "Laanta 3", "Laanta 4", "Laanta 5"])
+            employee = st.text_input("👤 Magacaaga (Your Name)")
         with c2:
-            category = st.selectbox("📂 Report Type", ["Missing", "High Demand", "New Request", "Damaged"])
-            item = st.text_input("📦 Item Name")
+            # SOMALI OPTIONS MAPPED TO DATABASE
+            cat_map = {
+                "Alaab Maqan (Missing)": "Maqan",
+                "Dalab Sare (High Demand)": "Dalab Sare",
+                "Dalab Cusub (New Request)": "Dalab Cusub",
+                "Burbur (Damaged)": "Burbur"
+            }
+            category_selection = st.selectbox("📂 Nooca Warbixinta (Report Type)", list(cat_map.keys()))
+            item = st.text_input("📦 Magaca Alaabta (Item Name)")
         
-        note = st.text_input("📝 Note / Qty")
+        note = st.text_input("📝 Faahfaahin / Tirada (Note/Qty)")
         
-        if st.form_submit_button("🚀 Submit to HQ"):
+        submitted = st.form_submit_button("🚀 Gudbi (Submit)")
+        
+        if submitted:
             if employee and item:
                 # Load Data
                 data = conn.read(worksheet="Sheet1", ttl=0)
                 data = data.dropna(how="all")
                 
+                # Use the mapped value (e.g., "Maqan") not the display value
+                real_category = cat_map[category_selection]
+                
                 new_row = pd.DataFrame([{
                     "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
                     "Branch": branch,
                     "Employee": employee,
-                    "Category": category,
+                    "Category": real_category,
                     "Item": item,
                     "Note": note
                 }])
                 
                 updated = pd.concat([data, new_row], ignore_index=True)
                 conn.update(worksheet="Sheet1", data=updated)
-                st.success("✅ Saved!")
+                st.success("✅ Waa la gudbiyay! (Sent Successfully)")
             else:
-                st.error("Name and Item required.")
+                st.error("⚠️ Fadlan buuxi Magacaaga iyo Alaabta.")
 
 # --- MANAGER TAB ---
 with tab_manager:
-    password = st.text_input("Enter Admin Password", type="password")
+    password = st.text_input("Geli Furaha (Password)", type="password")
     
     if password == "mareero2025":
-        st.success("🔓 Access Granted")
+        st.success("🔓 Soo dhawoow Maamule")
         
         # Load Data
         df = conn.read(worksheet="Sheet1", ttl=0)
         df = df.dropna(how="all")
         
-        # 1. LIVE METRICS
+        # 1. LIVE METRICS (Translated)
         m1, m2, m3 = st.columns(3)
-        m1.metric("Total Logs", len(df))
-        m2.metric("Missing Stock", len(df[df['Category'] == 'Missing']))
-        m3.metric("New Requests", len(df[df['Category'] == 'New Request']))
+        m1.metric("Wadarta Guud", len(df))
+        m2.metric("Alaabta Maqan", len(df[df['Category'] == 'Maqan']))
+        m3.metric("Dalabyada Cusub", len(df[df['Category'] == 'Dalab Cusub']))
         
         st.divider()
         
-        # 2. PDF DOWNLOAD BUTTON
-        col_btn, col_info = st.columns([1, 2])
-        with col_btn:
-            st.subheader("📄 Daily Report")
-            if st.button("Generate PDF Report"):
-                with st.spinner("Analyzing Data & Drawing Charts..."):
+        # 2. DOWNLOAD BUTTONS (PDF & EXCEL)
+        st.subheader("📄 Warbixinada (Reports)")
+        col_pdf, col_xls = st.columns(2)
+        
+        with col_pdf:
+            if st.button("Download PDF Report"):
+                with st.spinner("Samaynaya PDF..."):
                     pdf_bytes = generate_pdf(df)
                     st.download_button(
-                        label="📥 Download Now",
+                        label="📥 Download PDF",
                         data=pdf_bytes,
                         file_name=f"Mareero_Report_{datetime.now().date()}.pdf",
                         mime="application/pdf"
                     )
         
+        with col_xls:
+            if st.button("Download Excel Data"):
+                with st.spinner("Samaynaya Excel..."):
+                    xls_bytes = generate_excel(df)
+                    st.download_button(
+                        label="📥 Download Excel",
+                        data=xls_bytes,
+                        file_name=f"Mareero_Data_{datetime.now().date()}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+
         # 3. LIVE TABLE
-        st.subheader("📋 Live Database")
+        st.subheader("📋 Xogta Tooska ah (Live Data)")
         st.dataframe(df.sort_values(by="Date", ascending=False), use_container_width=True)
         
     elif password:
-        st.error("Wrong Password")
+        st.error("Furaha waa khalad (Wrong Password)")
