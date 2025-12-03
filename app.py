@@ -15,13 +15,13 @@ st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 # --- CSS: HIDE WATERMARKS & STYLE BUTTONS ---
 st.markdown("""
 <style>
-    /* Hide Streamlit Logos */
+    /* Hide Streamlit Logos & Menus */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     div[data-testid="stStatusWidget"] {visibility: hidden;}
     
-    /* Adjust top padding */
+    /* Adjust top padding for mobile */
     .block-container {
         padding-top: 1rem;
         padding-bottom: 5rem;
@@ -103,20 +103,4 @@ def generate_pdf(df):
     missing = len(df[df['Category'] == 'Maqan']) if not df.empty and 'Category' in df.columns else 0
     new_req = len(df[df['Category'] == 'Dalab Cusub']) if not df.empty and 'Category' in df.columns else 0
     
-    # Draw Summary Box
-    c.setStrokeColor(colors.lightgrey)
-    c.rect(40, height-250, 515, 60, fill=0)
-    
-    c.setFillColor(text_color)
-    c.setFont("Helvetica", 12)
-    c.drawString(60, height-210, f"Wadarta (Total): {total}")
-    c.drawString(240, height-210, f"Maqan (Missing): {missing}")
-    c.drawString(420, height-210, f"Dalab (Requests): {new_req}")
-
-    # --- SECTION 2: CHARTS ---
-    y_chart = height-300
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(40, y_chart, "2. SHAXDA XOGTA (CHARTS):")
-    
-    # SOMALI DESCRIPTION
-    c.setFont("Helvetica", 10
+    #
