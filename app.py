@@ -139,7 +139,7 @@ def generate_pdf(df):
     return buffer
 
 # --- 3. THE APP UI ---
-st.title("🏢 Mareero System")
+st.title("🏢 Mareero Auto Spare Parts")
 
 # TABS
 tab_staff, tab_manager = st.tabs(["📝 Qeybta Shaqaalaha (Staff)", "🔐 Maamulka (Manager)"])
@@ -269,4 +269,5 @@ with tab_manager:
         
     elif password:
         st.error("Furaha waa khalad (Wrong Password)")
+
 
