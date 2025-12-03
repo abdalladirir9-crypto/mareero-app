@@ -13,14 +13,16 @@ import io
 st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
 # --- HIDE STREAMLIT ADMIN ELEMENTS (FINAL FIX) ---
-# This code removes the footer, the header bar, and the top-right menu for all viewers.
+# This CSS is more aggressive and should successfully remove the footer for all users.
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
             header {visibility: hidden;}
-            /* Aggressive fix for footer/menu wrappers */
-            .css-vk32z5 {visibility: hidden;} 
+            /* Aggressively hide the footer wrapper elements */
+            footer {visibility: hidden; height: 0;}
+            div.css-1r650w8 {visibility: hidden;} /* Target for mobile footer area */
+            div.css-1dp5q0z {visibility: hidden;} /* Target for Streamlit Footer div */
+            div.st-emotion-cache-1r650w8 {visibility: hidden;} /* Another target for footer */
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
@@ -283,3 +285,4 @@ with tab_manager:
         
     elif password:
         st.error("Furaha waa khalad (Wrong Password)")
+
