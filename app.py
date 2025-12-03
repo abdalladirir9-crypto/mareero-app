@@ -5,16 +5,16 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 import io
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
-# --- 1. CSS: HIDE WATERMARKS & STYLE BUTTONS ---
+# --- HIDE FOOTER & WATERMARK (CSS) ---
 st.markdown("""
 <style>
-    /* Hide Streamlit Logos */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -26,22 +26,23 @@ st.markdown("""
         padding-bottom: 5rem;
     }
     
-    /* Make the Delete Icon Button Red and Round-ish */
+    /* Style for the Delete Button to be Red and Small */
     div[data-testid="stButton"] button {
-        border-radius: 8px;
+        border-radius: 5px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. DATABASE ---
+# --- 1. SETUP DATABASE ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     SHEET_URL = st.secrets["gcp_sheet_url"] 
 except Exception as e:
-    st.error(f"⚠️ Connection Error: {e}")
+    st.error(f"⚠️ Error: Fadlan hubi internetkaaga ama Database-ka. ({e})")
     st.stop()
 
-# --- 3. REPORT FUNCTIONS ---
+# --- 2. REPORT ENGINES (Restored Original Logic) ---
+
 def generate_excel(df):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -53,136 +54,217 @@ def generate_pdf(df):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-    c.setFillColor(colors.HexColor("#8B0000"))
+    
+    # --- HEADER ---
+    primary_color = colors.HexColor("#8B0000")
+    text_color = colors.HexColor("#2C3E50")
+    
+    c.setFillColor(primary_color)
     c.rect(0, height-100, width, 100, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 26)
     c.drawCentredString(width/2, height-60, "MAREERO OPERATION REPORT")
-    c.setFont("Helvetica", 12)
-    c.drawCentredString(width/2, height-80, f"Date: {datetime.now().strftime('%d %B %Y')}")
     
-    # Simple Content for PDF
-    c.setFillColor(colors.black)
     c.setFont("Helvetica", 12)
-    y = height - 150
-    c.drawString(40, y, f"Total Records: {len(df)}")
+    date_str = datetime.now().strftime('%d %B %Y')
+    c.drawCentredString(width/2, height-80, f"Taariikhda: {date_str}")
+
+    # --- SUMMARY ---
+    c.setFillColor(text_color)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(40, height-150, "1. KOOBITAAN (SUMMARY):")
+    
+    total = len(df)
+    missing = len(df[df['Category'] == 'Maqan']) if not df.empty and 'Category' in df.columns else 0
+    new_req = len(df[df['Category'] == 'Dalab Cusub']) if not df.empty and 'Category' in df.columns else 0
+    
+    c.setStrokeColor(colors.lightgrey)
+    c.rect(40, height-230, 515, 60, fill=0)
+    c.setFont("Helvetica", 12)
+    c.drawString(60, height-190, f"Wadarta Shaqooyinka: {total}")
+    c.drawString(240, height-190, f"Alaabta Maqan: {missing}")
+    c.drawString(420, height-190, f"Dalabyada Cusub: {new_req}")
+
+    # --- LIST ---
+    y_list = height - 260
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(40, y_list, "2. ALAABTA (ITEMS LIST):")
+    
+    y_row = y_list - 40
+    c.setFont("Helvetica", 10)
+    
+    if not df.empty:
+        # Show last 15 items
+        recent_df = df.tail(15)
+        for _, row in recent_df.iterrows():
+            line_text = f"{row.get('Branch','')} | {row.get('Category','')} | {row.get('Item','')} ({row.get('Note','')})"
+            c.drawString(40, y_row, line_text[:90])
+            c.line(40, y_row-5, 555, y_row-5)
+            y_row -= 20
+            if y_row < 50: break
+
     c.save()
     buffer.seek(0)
     return buffer
 
-# --- 4. APP UI ---
-st.title("🏢 Mareero Auto Spare Parts")
+# --- 3. THE APP UI ---
+st.title("🏢 Mareero System")
 
-tab_staff, tab_manager = st.tabs(["📝 Staff Area", "🔐 Manager Area"])
+# RESTORED: Original Tab Names
+tab_staff, tab_manager = st.tabs(["📝 Qeybta Shaqaalaha (Staff)", "🔐 Maamulka (Manager)"])
 
-# --- STAFF TAB ---
+# --- STAFF TAB (Original Somali/English) ---
 with tab_staff:
     st.info("Fadlan halkan ku diiwaangeli warbixintaada maalinlaha ah.")
+    
     with st.form("log_form", clear_on_submit=True):
         c1, c2 = st.columns(2)
         with c1:
-            branch = st.selectbox("📍 Branch", ["Kaydka M.Hassan", "Branch 1", "Branch 3", "Branch 4", "Branch 5"])
-            employee = st.text_input("👤 Magacaaga")
+            branch_options = ["Kaydka M.Hassan", "Branch 1", "Branch 3", "Branch 4", "Branch 5"]
+            branch = st.selectbox("📍 Branch", branch_options)
+            employee = st.text_input("👤 Magacaaga (Your Name)")
         with c2:
-            cat_map = {"Alaabta Maqan": "Maqan", "Dalab Sare": "Dalab Sare", "Dalab Cusub": "Dalab Cusub"}
-            cat_key = st.selectbox("📂 Nooca", list(cat_map.keys()))
-            item = st.text_input("📦 Magaca Alaabta")
-        note = st.text_input("📝 Note / Qty")
-        if st.form_submit_button("🚀 Submit", use_container_width=True):
+            # RESTORED: Original Keys
+            cat_map = {
+                "Alaab Maqan (Missing)": "Maqan",
+                "Dalab Sare (High Demand)": "Dalab Sare",
+                "Dalab Cusub (New Request)": "Dalab Cusub"
+            }
+            category_selection = st.selectbox("📂 Nooca Warbixinta (Report Type)", list(cat_map.keys()))
+            item = st.text_input("📦 Magaca Alaabta (Item Name)")
+        
+        note = st.text_input("📝 Faahfaahin / Tirada (Note/Qty)")
+        
+        # RESTORED: Original Button Text
+        if st.form_submit_button("🚀 Gudbi (Submit)", use_container_width=True):
             if employee and item:
                 try:
                     data = conn.read(spreadsheet=SHEET_URL, worksheet="Sheet1", ttl=0)
                     if data is None: data = pd.DataFrame()
                     data = data.dropna(how="all")
+                    
+                    real_category = cat_map[category_selection]
+                    
                     new_row = pd.DataFrame([{
                         "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                        "Branch": branch, "Employee": employee,
-                        "Category": cat_map[cat_key], "Item": item, "Note": note
+                        "Branch": branch,
+                        "Employee": employee,
+                        "Category": real_category,
+                        "Item": item,
+                        "Note": note
                     }])
-                    conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=pd.concat([data, new_row], ignore_index=True))
+                    
+                    updated = pd.concat([data, new_row], ignore_index=True)
+                    conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=updated)
                     st.cache_data.clear()
-                    st.success("Sent!")
-                except Exception as e: st.error(f"Error: {e}")
-            else: st.error("Fill Name & Item")
+                    st.success("✅ Waa la gudbiyay! (Sent Successfully)")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+            else:
+                st.error("⚠️ Fadlan buuxi Magacaaga iyo Alaabta.")
 
 # --- MANAGER TAB ---
 with tab_manager:
-    # --- LOGIN ROW (Compact) ---
-    # [5, 1] ratio keeps the button small and next to input
-    # vertical_alignment="bottom" ensures they line up perfectly
+    
+    # --- 1. NEW FEATURE: LOGIN ROW WITH ENTER BUTTON ---
+    # Columns [5, 1] means the input is 5 times wider than the button
     c_pass, c_btn = st.columns([5, 1], vertical_alignment="bottom")
     
     with c_pass:
-        password = st.text_input("Password", type="password", placeholder="Enter Password...", label_visibility="collapsed")
+        password = st.text_input("Geli Furaha (Password)", type="password", placeholder="Enter Password...", label_visibility="collapsed")
     with c_btn:
-        # Small Enter Icon
+        # The Enter Button next to password
         login_click = st.button("➡️", help="Enter")
 
-    # --- DASHBOARD ---
+    # --- CHECK PASSWORD ---
     if password == "mareero2025" or login_click:
         if password == "mareero2025":
+            st.success("🔓 Soo dhawoow Maamule")
+            
+            # Load Data
             try:
-                df = conn.read(spreadsheet=SHEET_URL, worksheet="Sheet1", ttl=0) or pd.DataFrame()
+                df = conn.read(spreadsheet=SHEET_URL, worksheet="Sheet1", ttl=0)
+                if df is None: df = pd.DataFrame()
                 df = df.dropna(how="all")
-            except: df = pd.DataFrame()
+            except:
+                df = pd.DataFrame()
 
             if not df.empty:
-                # Metrics
+                # RESTORED: Original Metric Names
                 m1, m2, m3 = st.columns(3)
-                m1.metric("Total", len(df))
-                m2.metric("Missing", len(df[df['Category']=='Maqan']) if 'Category' in df.columns else 0)
-                m3.metric("New Req", len(df[df['Category']=='Dalab Cusub']) if 'Category' in df.columns else 0)
+                m1.metric("Wadarta Guud", len(df))
+                m2.metric("Alaabta Maqan", len(df[df['Category'] == 'Maqan']) if 'Category' in df.columns else 0)
+                m3.metric("Dalabyada Cusub", len(df[df['Category'] == 'Dalab Cusub']) if 'Category' in df.columns else 0)
                 
                 st.divider()
                 
-                # Reports
-                c_pdf, c_xls = st.columns(2)
-                with c_pdf:
-                    if st.button("📄 PDF", use_container_width=True):
-                        st.download_button("⬇️ PDF", generate_pdf(df), "report.pdf", "application/pdf")
-                with c_xls:
-                    if st.button("📊 Excel", use_container_width=True):
-                        st.download_button("⬇️ Excel", generate_excel(df), "data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                # DOWNLOAD BUTTONS
+                st.subheader("📄 Warbixinada (Reports)")
+                col_pdf, col_xls = st.columns(2)
+                
+                with col_pdf:
+                    if st.button("Download PDF Report", use_container_width=True):
+                        st.download_button("📥 Download PDF", generate_pdf(df), "mareero_report.pdf", "application/pdf")
+                with col_xls:
+                    if st.button("Download Excel Data", use_container_width=True):
+                        st.download_button("📥 Download Excel", generate_excel(df), "mareero_data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
                 st.divider()
-                st.write("### 🛠️ Edit / Delete")
+
+                # --- 2. NEW FEATURE: TABLE WITH DELETE ICON ---
+                st.subheader("🛠️ Wax ka bedel / Tirtir (Edit/Delete)")
                 
-                # Table with Checkbox
-                df_edit = df.copy()
-                df_edit.insert(0, "Select", False)
-                
-                edited = st.data_editor(
-                    df_edit,
+                # Add a 'Select' column for checkboxes
+                df_with_delete = df.copy()
+                df_with_delete.insert(0, "Select", False)
+
+                # The Table
+                edited_df = st.data_editor(
+                    df_with_delete,
                     num_rows="fixed",
                     hide_index=True,
                     use_container_width=True,
-                    column_config={"Select": st.column_config.CheckboxColumn("❌", width="small")}
+                    key="data_editor",
+                    column_config={
+                        "Select": st.column_config.CheckboxColumn("❌", width="small")
+                    }
                 )
+                
+                st.write("") # Spacer
+                
+                # ACTION BUTTONS LAYOUT
+                # Save (Left) ----- Empty Space ----- Delete Icon (Right)
+                c_save, c_mid, c_del = st.columns([3, 4, 1])
 
-                st.write("")
-                # --- ACTION BUTTONS ---
-                # Save (Wide) --- Spacer --- Delete (Small Icon)
-                c_save, c_mid, c_del = st.columns([3, 3, 1])
-                
                 with c_save:
-                    if st.button("💾 Save Changes", use_container_width=True):
+                    if st.button("💾 Kaydi Isbedelka (Save)", use_container_width=True):
                         try:
-                            final = edited.drop(columns=["Select"])
-                            conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=final)
+                            # Remove the 'Select' column before saving
+                            final_df = edited_df.drop(columns=["Select"])
+                            conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=final_df)
                             st.cache_data.clear()
-                            st.success("Saved!")
+                            st.success("✅ Saved!")
                             st.rerun()
-                        except Exception as e: st.error(e)
-                
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+
                 with c_del:
                     # THE SMALL DELETE ICON
                     if st.button("🗑️", type="primary", help="Delete Selected Rows"):
                         try:
-                            final = edited[edited["Select"]==False].drop(columns=["Select"])
-                            conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=final)
+                            # Filter out selected rows
+                            rows_to_keep = edited_df[edited_df["Select"] == False]
+                            # Remove the 'Select' column
+                            final_df = rows_to_keep.drop(columns=["Select"])
+                            
+                            conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=final_df)
                             st.cache_data.clear()
                             st.success("Deleted!")
                             st.rerun()
-                        except Exception as e: st.error(e)
-            else: st.warning("No Data")
-        else: st.error("Wrong Password")
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+            else:
+                st.warning("⚠️ Xog ma jiro (No Data Found)")
+                
+        else:
+            st.error("Furaha waa khalad (Wrong Password)")
