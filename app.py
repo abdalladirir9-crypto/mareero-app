@@ -10,7 +10,7 @@ from reportlab.lib import colors
 import io
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
+st.set_page_config(page_title="Mareero Auto Spare Parts", page_icon="🏢", layout="wide")
 
 # --- 1. SETUP DATABASE ---
 try:
@@ -269,3 +269,4 @@ with tab_manager:
         
     elif password:
         st.error("Furaha waa khalad (Wrong Password)")
+
