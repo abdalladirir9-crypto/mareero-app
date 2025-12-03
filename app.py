@@ -13,19 +13,24 @@ import io
 st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
 # --- HIDE STREAMLIT ADMIN ELEMENTS (FINAL FIX) ---
-# This CSS is more aggressive and should successfully remove the footer for all users.
+# This CSS uses !important to override Streamlit's default styles for all users.
 hide_st_style = """
             <style>
-            #MainMenu {visibility: hidden;}
-            header {visibility: hidden;}
-            /* Aggressively hide the footer wrapper elements */
-            footer {visibility: hidden; height: 0;}
-            div.css-1r650w8 {visibility: hidden;} /* Target for mobile footer area */
-            div.css-1dp5q0z {visibility: hidden;} /* Target for Streamlit Footer div */
-            div.st-emotion-cache-1r650w8 {visibility: hidden;} /* Another target for footer */
+            /* Hide the main hamburger menu */
+            #MainMenu {visibility: hidden !important;}
+            /* Hide the standard footer container */
+            footer {visibility: hidden !important; display: none !important;}
+            /* Hide the default header bar */
+            header {visibility: hidden !important; display: none !important;}
+            /* Hide the specific container that holds the 'Created by/Hosted with' text */
+            div[data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
+            div[data-testid="stSidebarHeader"] {visibility: hidden !important; display: none !important;}
+            .css-1r650w8 {visibility: hidden !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
+
+# ... rest of your code ...
 
 
 # --- 1. SETUP DATABASE ---
@@ -285,4 +290,5 @@ with tab_manager:
         
     elif password:
         st.error("Furaha waa khalad (Wrong Password)")
+
 
