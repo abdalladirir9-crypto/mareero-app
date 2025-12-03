@@ -8,11 +8,20 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 import io
+import os # Added for path handling
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
-# NOTE: The failing CSS was removed here. The file .streamlit/config.toml handles hiding the footer now.
+# --- LOAD EXTERNAL CSS ---
+# This loads the .streamlit/style.css file to remove the Streamlit branding logos.
+# The 'rb' mode is safer for file reading in deployment environments.
+try:
+    with open(os.path.join(".streamlit", "style.css"), "r") as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+except FileNotFoundError:
+    # This prevents the app from crashing if the CSS file is missing during initial deployment
+    pass
 
 # --- 1. SETUP DATABASE ---
 try:
@@ -141,7 +150,7 @@ def generate_pdf(df):
     return buffer
 
 # --- 3. THE APP UI ---
-st.title("🏢 Mareero Auto Spare Parts")
+st.title("🏢 Mareero System")
 
 # TABS
 tab_staff, tab_manager = st.tabs(["📝 Qeybta Shaqaalaha (Staff)", "🔐 Maamulka (Manager)"])
