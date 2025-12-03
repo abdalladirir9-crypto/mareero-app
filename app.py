@@ -8,20 +8,40 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 import io
-import os # Added for path handling
+import os 
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
-# --- LOAD EXTERNAL CSS ---
-# This loads the .streamlit/style.css file to remove the Streamlit branding logos.
-# The 'rb' mode is safer for file reading in deployment environments.
-try:
-    with open(os.path.join(".streamlit", "style.css"), "r") as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-except FileNotFoundError:
-    # This prevents the app from crashing if the CSS file is missing during initial deployment
-    pass
+# --- HIDE FOOTER USING SCROLL WRAPPER (Final Fix) ---
+# This CSS creates a wrapper that hides the persistent footer elements outside the viewable area.
+st.markdown("""
+<style>
+/* Hide the default Streamlit elements */
+#MainMenu {visibility: hidden !important;}
+header {visibility: hidden !important;}
+
+/* Aggressively target and hide the default footer */
+footer {visibility: hidden !important; display: none !important;}
+
+/* Create a custom scroll area that pushes the true footer out of sight */
+.stApp {
+    overflow-y: scroll;
+}
+.stApp > header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+}
+
+/* Hide the persistent mobile toolbar and developer badge */
+div[data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
+
+</style>
+""", unsafe_allow_html=True)
+
 
 # --- 1. SETUP DATABASE ---
 try:
