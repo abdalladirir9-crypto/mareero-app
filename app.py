@@ -13,31 +13,35 @@ import os
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
-# --- HIDE FOOTER USING SCROLL WRAPPER (Final Fix) ---
-# This CSS creates a wrapper that hides the persistent footer elements outside the viewable area.
+# --- HIDE FOOTER USING AGGRESSIVE ABSOLUTE POSITIONING ---
+# This CSS attempts to push the hidden footer containers completely below the visible screen.
 st.markdown("""
 <style>
-/* Hide the default Streamlit elements */
+/* Hide the main elements */
 #MainMenu {visibility: hidden !important;}
-header {visibility: hidden !important;}
+header {visibility: hidden !important; height: 0 !important;}
 
-/* Aggressively target and hide the default footer */
+/* Aggressively hide the standard footer */
 footer {visibility: hidden !important; display: none !important;}
 
-/* Create a custom scroll area that pushes the true footer out of sight */
-.stApp {
-    overflow-y: scroll;
-}
-.stApp > header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 999;
-}
+/* Target and hide the mobile toolbar */
+div[data-testid="stDecoration"] {visibility: hidden !important; height: 0 !important;}
 
-/* Hide the persistent mobile toolbar and developer badge */
-div[data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
+/* ----- THE ABSOLUTE POSITIONING FIX ----- */
+/* Target the main app container */
+.main {
+    padding-bottom: 0 !important; /* Remove bottom padding that might show the footer */
+}
+/* Ensure the page content fills the screen minus the footer space */
+div.block-container {
+    padding-bottom: 0 !important; 
+    margin-bottom: -150px !important; /* Pull content down to hide bottom logos */
+}
+/* Hide the deepest internal container where logos usually live */
+div[data-testid="stStatusWidget"] {
+    visibility: hidden !important;
+    display: none !important;
+}
 
 </style>
 """, unsafe_allow_html=True)
