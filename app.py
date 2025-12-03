@@ -10,7 +10,17 @@ from reportlab.lib import colors
 import io
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Mareero Auto Spare Parts", page_icon="🏢", layout="wide")
+st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
+
+# --- HIDE STREAMLIT STYLE (CLEAN LOOK) ---
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # --- 1. SETUP DATABASE ---
 try:
@@ -151,13 +161,13 @@ with tab_staff:
     with st.form("log_form"):
         c1, c2 = st.columns(2)
         with c1:
-            # UPDATED BRANCH LIST (As you requested)
+            # UPDATED BRANCH LIST
             branch_options = [
+                "Kaydka M.Hassan",
                 "Branch 1",
                 "Branch 3", 
                 "Branch 4", 
-                "Branch 5",
-                "Kaydka M.Hassan"
+                "Branch 5"
             ]
             branch = st.selectbox("📍 Branch", branch_options)
             employee = st.text_input("👤 Magacaaga (Your Name)")
@@ -269,5 +279,3 @@ with tab_manager:
         
     elif password:
         st.error("Furaha waa khalad (Wrong Password)")
-
-
