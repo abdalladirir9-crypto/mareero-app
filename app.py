@@ -216,8 +216,18 @@ with tab_staff:
 
 # --- MANAGER TAB ---
 with tab_manager:
-    password = st.text_input("Geli Furaha (Password)", type="password")
+    # --- LOGIN SECTION ---
+    # We use columns to make the button sit next to the input
+    c_pass, c_login = st.columns([4, 1]) 
     
+    with c_pass:
+        password = st.text_input("Geli Furaha (Password)", type="password", label_visibility="collapsed", placeholder="Enter Password")
+    
+    with c_login:
+        # This button allows the user to click "Enter" manually
+        login_btn = st.button("🔓 Enter")
+
+    # Check password (works if they press Enter key OR click the button)
     if password == "mareero2025":
         st.success("🔓 Soo dhawoow Maamule")
         
@@ -232,8 +242,8 @@ with tab_manager:
             # 1. LIVE METRICS
             m1, m2, m3 = st.columns(3)
             m1.metric("Wadarta Guud", len(df))
-            m2.metric("Alaabta Maqan", len(df[df['Category'] == 'Maqan']) if 'Category' in df.columns else 0)
-            m3.metric("Dalabyada Cusub", len(df[df['Category'] == 'Dalab Cusub']) if 'Category' in df.columns else 0)
+            m2.metric("Maqan", len(df[df['Category'] == 'Maqan']) if 'Category' in df.columns else 0)
+            m3.metric("Dalab Cusub", len(df[df['Category'] == 'Dalab Cusub']) if 'Category' in df.columns else 0)
             
             st.divider()
             
@@ -247,86 +257,87 @@ with tab_manager:
                         try:
                             pdf_bytes = generate_pdf(df)
                             st.download_button(
-                                label="📥 Click to Save PDF",
+                                label="📥 Save PDF",
                                 data=pdf_bytes,
-                                file_name=f"Mareero_Report_{datetime.now().date()}.pdf",
+                                file_name=f"Report_{datetime.now().date()}.pdf",
                                 mime="application/pdf"
                             )
                         except Exception as e:
-                            st.error(f"Error generating PDF: {e}")
+                            st.error(f"Error: {e}")
             
             with col_xls:
                 if st.button("Download Excel Data"):
                     with st.spinner("Samaynaya Excel..."):
                         xls_bytes = generate_excel(df)
                         st.download_button(
-                            label="📥 Click to Save Excel",
+                            label="📥 Save Excel",
                             data=xls_bytes,
-                            file_name=f"Mareero_Data_{datetime.now().date()}.xlsx",
+                            file_name=f"Data_{datetime.now().date()}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
 
             st.divider()
 
             # 3. EDIT / DELETE SECTION
-            st.subheader("🛠️ Wax ka bedel / Tirtir (Edit/Delete)")
+            st.subheader("🛠️ Wax ka bedel / Tirtir")
             
-            # A. Add a temporary 'Delete' column for the checkboxes
+            # Add checkbox column
             df_with_delete = df.copy()
             df_with_delete.insert(0, "Delete", False)
 
-            # B. The Data Editor
+            # The Data Editor
             edited_df = st.data_editor(
                 df_with_delete,
-                num_rows="fixed", # This hides the messy toolbar icons
-                hide_index=True,  # This hides the 0, 1, 2 numbers (The "hera")
+                num_rows="fixed", 
+                hide_index=True,
                 use_container_width=True,
                 key="data_editor",
                 column_config={
                     "Delete": st.column_config.CheckboxColumn(
-                        "Tirtir?",
-                        help="Select rows to delete",
+                        "❌",
+                        help="Select to remove",
                         default=False,
+                        width="small"
                     )
                 }
             )
             
-            # C. The Action Buttons
-            col_save, col_delete = st.columns([1, 1])
+            st.write("") # Add a little space
+            
+            # --- ACTION BUTTONS (PROFESSIONAL LAYOUT) ---
+            # We use 3 columns:
+            # Col 1: Save Button (Left)
+            # Col 2: Empty Space (Middle)
+            # Col 3: Delete Button (Right - Small)
+            
+            col_save, col_space, col_del = st.columns([2, 3, 1])
 
             with col_save:
-                if st.button("💾 Kaydi Isbedelka (Save Edits)"):
+                if st.button("💾 Kaydi (Save Changes)"):
                     try:
-                        # Remove the 'Delete' column before saving
                         final_df = edited_df.drop(columns=["Delete"])
                         conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=final_df)
                         st.cache_data.clear()
-                        st.success("✅ Updated Successfully!")
+                        st.success("✅ Saved!")
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error: {e}")
 
-            with col_delete:
-                # The DELETE Button (Red)
-                if st.button("🗑️ Delete Selected Rows", type="primary"):
+            with col_del:
+                # Small, compact delete button
+                if st.button("🗑️ Delete", type="primary"):
                     try:
-                        # 1. Filter out the rows where 'Delete' is True
                         rows_to_keep = edited_df[edited_df["Delete"] == False]
-                        
-                        # 2. Drop the 'Delete' column so we don't save it to Google Sheets
                         final_df = rows_to_keep.drop(columns=["Delete"])
-                        
-                        # 3. Update Google Sheets
                         conn.update(spreadsheet=SHEET_URL, worksheet="Sheet1", data=final_df)
-                        
                         st.cache_data.clear()
-                        st.success("✅ Items Deleted!")
+                        st.success("Deleted!")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error deleting: {e}")
+                        st.error(f"Error: {e}")
 
         else:
-            st.warning("⚠️ Xog ma jiro (No Data Found)")
+            st.warning("⚠️ Xog ma jiro (No Data)")
             
-    elif password:
+    elif password and password != "mareero2025":
         st.error("Furaha waa khalad (Wrong Password)")
