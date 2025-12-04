@@ -1,4 +1,14 @@
 import streamlit as st
+
+# ---------------------------------------------------------
+# ADD THIS BLOCK TO CHANGE THE TAB TITLE & ICON
+# ---------------------------------------------------------
+st.set_page_config(
+    page_title="Mareero System",  # This changes "Streamlit" to "Mareero System"
+    page_icon="🏢",               # This adds a building icon to the tab
+    layout="wide"                 # This uses the full width of the screen
+)
+# ---------------------------------------------------------
 # 1. Force Matplotlib to run in "headless" mode (Prevents white screen hang)
 import matplotlib
 matplotlib.use('Agg') 
@@ -367,5 +377,6 @@ with tab_manager:
                 
         else:
             st.error("Furaha waa khalad (Wrong Password)")
+
 
 
