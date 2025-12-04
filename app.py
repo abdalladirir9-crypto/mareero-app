@@ -1,15 +1,16 @@
 import streamlit as st
 
 # ---------------------------------------------------------
-# ADD THIS BLOCK TO CHANGE THE TAB TITLE & ICON
+# PAGE CONFIGURATION (MUST BE THE FIRST STREAMLIT COMMAND)
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Mareero System",  # This changes "Streamlit" to "Mareero System"
-    page_icon="🏢",               # This adds a building icon to the tab
-    layout="wide"                 # This uses the full width of the screen
+    page_title="Mareero System",  # Title on the browser tab
+    page_icon="🏢",               # Icon on the browser tab
+    layout="wide"                 # Use full screen width
 )
-# ---------------------------------------------------------
-# 1. Force Matplotlib to run in "headless" mode (Prevents white screen hang)
+
+# --- IMPORTS ---
+# Force Matplotlib to run in "headless" mode (Prevents white screen hang on Render)
 import matplotlib
 matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
@@ -22,9 +23,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 import io
-
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="Mareero System", page_icon="🏢", layout="wide")
 
 # --- CSS: HIDE WATERMARKS & STYLE BUTTONS ---
 st.markdown("""
@@ -182,7 +180,7 @@ def generate_pdf(df):
     # SOMALI DESCRIPTION
     c.setFont("Helvetica", 10)
     c.setFillColor(colors.darkgrey)
-    c.drawString(40, y_list-20, "Liiskan wuxuu muujinayaa alaabta 'Maqan' ama 'Dalabka Sare' ah ee u baahan fiiro gaar ah.")
+    c.drawString(40, y_list-20, "Liiskan wuxuu muujinayaa alaabta 'Maqan' ama 'Dalabka Sare' suuqana haysta  ee u baahan fiiro gaar ah.")
     
     # Table Header
     c.setFillColor(colors.lightgrey)
@@ -377,6 +375,3 @@ with tab_manager:
                 
         else:
             st.error("Furaha waa khalad (Wrong Password)")
-
-
-
