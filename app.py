@@ -207,7 +207,7 @@ def generate_pdf(df):
     return buffer
 
 # --- 3. THE APP UI ---
-st.title("🏢 Mareero Auto Spare Parts")
+st.title("🏢 Mareero General Trading LLC")
 
 # TABS (RESTORED BILINGUAL NAMES)
 tab_staff, tab_manager = st.tabs(["📝 Qeybta Shaqaalaha (Staff)", "🔐 Maamulka (Manager)"])
@@ -367,4 +367,5 @@ with tab_manager:
                 
         else:
             st.error("Furaha waa khalad (Wrong Password)")
+
 
